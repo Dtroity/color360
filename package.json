@@ -1,0 +1,51 @@
+{
+  "name": "video-shop-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm -r run dev",
+    "dev:backend": "pnpm --filter backend start:dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "build": "pnpm --filter frontend build && pnpm --filter backend build",
+    "build:backend": "pnpm --filter backend build",
+    "build:frontend": "pnpm --filter frontend build",
+    "lint": "pnpm --filter frontend lint && pnpm --filter backend lint",
+    "migrate:html": "ts-node --files --project scripts/tsconfig.json scripts/migrate-from-html.ts",
+    "migrate:html:tsx": "tsx scripts/migrate-from-html.ts",
+    "seed": "ts-node --files --project scripts/tsconfig.json scripts/seed.ts",
+    "seed:tsx": "tsx scripts/seed.ts",
+    "seed:compile": "tsc --project scripts/tsconfig.json --outDir scripts/dist --rootDir scripts && node scripts/dist/seed.js",
+    "seed:backend": "pnpm --filter backend seed",
+    "import:csv": "ts-node --files --project scripts/tsconfig.json scripts/import-from-csv.ts",
+    "import:products": "ts-node --files --project apps/backend/tsconfig.json apps/backend/src/scripts/import-products.ts",
+    "test:connection": "ts-node --project scripts/tsconfig.json scripts/test-connection.ts",
+    "analyze:migration": "tsx scripts/analyze-migration.ts",
+    "analyze:api-db": "tsx scripts/analyze-api-db.ts",
+    "test:all": "tsx scripts/test-all.ts",
+    "cleanup:non-products": "ts-node --files --project scripts/tsconfig.json scripts/cleanup-non-products.ts"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "dependencies": {
+    "@nestjs/cli": "^11.0.14",
+    "cheerio": "^1.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "csv-parse": "^6.1.0",
+    "fast-glob": "^3.3.2",
+    "react-dropzone": "^14.3.8",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^22.10.7",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^16.6.1",
+    "pg": "^8.16.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typeorm": "^0.3.27"
+  }
+}
