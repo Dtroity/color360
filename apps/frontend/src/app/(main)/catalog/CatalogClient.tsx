@@ -66,7 +66,7 @@ export function CatalogClient({ initialData }: CatalogClientProps) {
   // #region agent log
   useEffect(() => {
     if (products.length > 0) {
-      fetch('http://127.0.0.1:7242/ingest/1f928c9a-520e-43c4-b508-db12c4521d27',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CatalogClient.tsx:60',message:'CSR products order',data:{total,first5Ids:products.slice(0,5).map(p=>p.id),first5Categories:products.slice(0,5).map(p=>({id:p.id,category:p.category?.name,sortOrder:p.category?.sortOrder}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/1f928c9a-520e-43c4-b508-db12c4521d27',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CatalogClient.tsx:60',message:'CSR products order',data:{total,first5Ids:products.slice(0,5).map(p=>p.id),first5Categories:products.slice(0,5).map(p=>({id:p.id,category:p.category?.name}))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
     }
   }, [products, total]);
   // #endregion
