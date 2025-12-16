@@ -47,6 +47,12 @@ export class Product {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  isFeatured: boolean;
+
+  @Column({ type: 'int', default: 0 })
+  viewsCount: number;
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   availability: string | null = null;
 

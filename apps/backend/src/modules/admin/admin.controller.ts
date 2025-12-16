@@ -1,11 +1,14 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ApiTags } from '@nestjs/swagger';
 import { Order, OrderStatus } from '../orders/entities/order.entity';
 import { Product } from '../catalog/products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 import { AdminGuard } from '../../common/guards/admin.guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+
+@ApiTags('Admin')
 
 @Controller('admin')
 export class AdminController {

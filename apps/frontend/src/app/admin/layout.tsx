@@ -30,8 +30,10 @@ const menu = [
   { href: '/admin/categories', label: 'Категории' },
   { href: '/admin/manufacturers', label: 'Производители' },
   { href: '/admin/popular-devices', label: 'Популярные устройства' },
+  { href: '/admin/services', label: 'Услуги монтажа' },
   { href: '/admin/orders', label: 'Заказы' },
   { href: '/admin/settings', label: 'Настройки' },
+  { href: '/admin/profile', label: 'Профиль' },
 ];
 
 function AdminLayoutContent({

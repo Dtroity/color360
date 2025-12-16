@@ -1,6 +1,20 @@
 /**
  * Скрипт для очистки не-товаров из базы данных
- * Удаляет товары, которые являются статьями, новостями, политикой конфиденциальности и т.д.
+ * 
+ * Удаляет товары, которые:
+ * 1. Имеют нулевую или отсутствующую цену (price IS NULL OR price <= 0)
+ * 2. Не имеют названия (name отсутствует или пустое)
+ * 3. Не имеют изображений (отсутствуют изображения или только логотипы)
+ * 4. Являются статьями, новостями, политикой конфиденциальности и т.д.
+ * 5. Не имеют достаточного количества признаков товара (менее 3 из 5)
+ * 
+ * Инструкция по запуску:
+ * 1. Убедитесь, что файл .env настроен с правильными параметрами БД
+ * 2. Запустите: pnpm run cleanup:non-products
+ *    или: ts-node --files --project scripts/tsconfig.json scripts/cleanup-non-products.ts
+ * 
+ * ВАЖНО: Скрипт работает безопасно - один проход, один результат.
+ * Перед удалением выводится список товаров, которые будут удалены.
  */
 
 import { config as dotenvConfig } from 'dotenv';
@@ -106,23 +120,32 @@ async function cleanupNonProducts() {
       } catch (e) {}
       // #endregion
       
-      // ЯВНАЯ ПРОВЕРКА: Товары с нулевой или отсутствующей ценой должны быть удалены
-      if (product.price === 0 || product.price === null || product.price === undefined) {
+      // ЯВНАЯ ПРОВЕРКА 1: Товары с нулевой или отсутствующей ценой должны быть удалены
+      if (product.price === null || product.price === undefined || product.price <= 0) {
         productsToDelete.push(product);
-        console.log(`   ❌ ${product.name} (ID: ${product.id}) - будет удален [нулевая цена: ${product.price}]`);
-        // #region agent log
-        try {
-          require('fs').appendFileSync(logPath, JSON.stringify({
-            location: 'cleanup-non-products.ts:105',
-            message: 'Zero price product marked for deletion',
-            data: { productId: product.id, name: product.name, price: product.price },
-            timestamp: Date.now(),
-            sessionId: 'debug-session',
-            runId: 'run1',
-            hypothesisId: 'A'
-          }) + '\n', 'utf8');
-        } catch (e) {}
-        // #endregion
+        console.log(`   ❌ ${product.name || 'Без названия'} (ID: ${product.id}) - будет удален [нулевая/отсутствующая цена: ${product.price}]`);
+        continue;
+      }
+
+      // ЯВНАЯ ПРОВЕРКА 2: Товары без названия должны быть удалены
+      if (!product.name || product.name.trim().length === 0) {
+        productsToDelete.push(product);
+        console.log(`   ❌ Товар без названия (ID: ${product.id}) - будет удален [отсутствует name]`);
+        continue;
+      }
+
+      // ЯВНАЯ ПРОВЕРКА 3: Товары без изображений должны быть удалены
+      const hasRealImages = product.images && product.images.length > 0 && product.images.some((img: any) => {
+        const url = (img.url || '').toLowerCase();
+        return !url.includes('logo') && 
+               !url.includes('logotip') && 
+               !url.includes('catalog/hiwatch') &&
+               !url.includes('brand');
+      });
+      
+      if (!hasRealImages) {
+        productsToDelete.push(product);
+        console.log(`   ❌ ${product.name} (ID: ${product.id}) - будет удален [отсутствуют изображения]`);
         continue;
       }
       
@@ -173,23 +196,18 @@ async function cleanupNonProducts() {
         continue;
       }
       
+      // Дополнительные проверки для товаров, которые прошли базовые проверки
       // Проверка на изображения - если все изображения это логотипы, считаем что изображений нет
-      const hasRealImages = product.images && product.images.some((img: any) => {
-        const url = (img.url || '').toLowerCase();
-        return !url.includes('logo') && 
-               !url.includes('logotip') && 
-               !url.includes('catalog/hiwatch') &&
-               !url.includes('brand');
-      });
+      // (эта проверка уже выполнена выше, но оставляем для совместимости)
       
       // Если товар не имеет основных признаков товара - помечаем на удаление
-      // Товар должен иметь хотя бы 3 из 6 признаков: цена, SKU, описание, категория, реальные изображения, нормальное название
+      // Товар должен иметь хотя бы 3 из 5 признаков: цена, SKU, описание, категория, нормальное название
+      // (изображения уже проверены выше)
       const productSigns = [
         hasPrice, 
         hasSku, 
         hasDescription, 
         hasCategory, 
-        hasRealImages,
         nameWords.length >= 3 // Нормальное название товара должно содержать минимум 3 слова
       ].filter(Boolean).length;
       
@@ -199,9 +217,8 @@ async function cleanupNonProducts() {
         if (!hasPrice && !hasSku) reasons.push('нет цены/SKU');
         if (!hasDescription) reasons.push('нет описания');
         if (!hasCategory) reasons.push('нет категории');
-        if (!hasRealImages) reasons.push('нет реальных изображений (только логотипы)');
         if (nameWords.length < 3) reasons.push('слишком короткое название');
-        console.log(`   ❌ ${product.name} (ID: ${product.id}) - будет удален [признаков товара: ${productSigns}/6, ${reasons.join(', ')}]`);
+        console.log(`   ❌ ${product.name} (ID: ${product.id}) - будет удален [признаков товара: ${productSigns}/5, ${reasons.join(', ')}]`);
       }
     }
     

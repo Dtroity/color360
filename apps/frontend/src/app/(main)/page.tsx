@@ -1,5 +1,5 @@
 import { HeroSection } from "@/components/home/HeroSection";
-import { PopularBrands } from "@/components/home/PopularBrands";
+import { PopularProducts } from "@/components/home/PopularProducts";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
@@ -25,7 +25,7 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <PopularBrands />
+      <PopularProducts />
       <section className="mx-auto mt-16 max-w-6xl px-4">
         <div className="grid gap-4 lg:grid-cols-3">
           {sellingPoints.map((point) => (

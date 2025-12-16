@@ -9,6 +9,7 @@ import { User } from '../modules/users/entities/user.entity';
 import { Order } from '../modules/orders/entities/order.entity';
 import { OrderItem } from '../modules/orders/entities/order-item.entity';
 import { SiteSetting } from '../modules/settings/entities/site-setting.entity';
+import { InstallationService } from '../modules/services/entities/installation-service.entity';
 
 // Пути к entities и migrations
 // Development: используем TypeScript файлы
@@ -35,6 +36,8 @@ const entities = [
   // Entities с зависимостями от других
   Order,
   OrderItem,
+  // Услуги монтажа (независимая сущность)
+  InstallationService,
 ];
 
 const baseConfig: DataSourceOptions = {

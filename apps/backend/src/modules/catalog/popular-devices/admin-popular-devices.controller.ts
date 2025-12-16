@@ -116,5 +116,38 @@ export class AdminPopularDevicesController {
     await this.popularDeviceRepo.remove(device);
     return { message: 'Популярное устройство успешно удалено' };
   }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Обновить порядок устройств', description: 'Обновляет порядок сортировки для списка устройств (для drag&drop)' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              sortOrder: { type: 'number' },
+            },
+          },
+        },
+      },
+    },
+  })
+  async reorder(@Body() dto: { items: Array<{ id: number; sortOrder: number }> }) {
+    if (!dto.items || !Array.isArray(dto.items)) {
+      throw new BadRequestException('Неверный формат данных');
+    }
+
+    // Обновляем порядок для каждого устройства
+    const updates = dto.items.map(item => 
+      this.popularDeviceRepo.update(item.id, { sortOrder: item.sortOrder })
+    );
+
+    await Promise.all(updates);
+    return { message: 'Порядок успешно обновлен' };
+  }
 }
 

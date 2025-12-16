@@ -7,6 +7,7 @@ import { Product } from '../../modules/catalog/products/entities/product.entity'
 import { ProductImage } from '../../modules/catalog/products/entities/product-image.entity';
 import { User, UserRole } from '../../modules/users/entities/user.entity';
 import { SiteSetting } from '../../modules/settings/entities/site-setting.entity';
+import { InstallationService, PriceType } from '../../modules/services/entities/installation-service.entity';
 
 dotenvConfig({ path: process.env.DOTENV_PATH || '.env' });
 
@@ -35,6 +36,7 @@ async function seed() {
   const manufacturerRepo = dataSource.getRepository(Manufacturer);
   const userRepo = dataSource.getRepository(User);
   const siteSettingsRepo = dataSource.getRepository(SiteSetting);
+  const installationServiceRepo = dataSource.getRepository(InstallationService);
 
   await productImageRepo.delete({});
   await productRepo.delete({});
@@ -42,6 +44,7 @@ async function seed() {
   await manufacturerRepo.delete({});
   await userRepo.delete({});
   await siteSettingsRepo.delete({});
+  await installationServiceRepo.delete({});
 
   const manufacturers: Manufacturer[] = [];
   for (const m of manufacturersList) {
@@ -94,6 +97,94 @@ async function seed() {
 
   for (const setting of sampleSettings) {
     await siteSettingsRepo.save(siteSettingsRepo.create(setting));
+  }
+
+  // Seed данных для услуг монтажа видеонаблюдения
+  const installationServices = [
+    {
+      title: 'Установка камеры',
+      description: 'Монтаж одной видеокамеры (включая крепление, подключение питания)',
+      basePrice: 2500,
+      priceType: PriceType.PER_UNIT,
+      unitName: 'камера',
+      minQuantity: 1,
+      isActive: true,
+      sortOrder: 1,
+    },
+    {
+      title: 'Прокладка кабеля',
+      description: 'Прокладка кабеля для видеонаблюдения',
+      basePrice: 150,
+      priceType: PriceType.PER_UNIT,
+      unitName: 'метр',
+      minQuantity: 1,
+      isActive: true,
+      sortOrder: 2,
+    },
+    {
+      title: 'Воздушная линия',
+      description: 'Прокладка кабеля по воздушной линии',
+      basePrice: 200,
+      priceType: PriceType.PER_UNIT,
+      unitName: 'метр',
+      minQuantity: 1,
+      isActive: true,
+      sortOrder: 3,
+    },
+    {
+      title: 'Кабель-канал',
+      description: 'Установка кабель-канала для прокладки проводов',
+      basePrice: 180,
+      priceType: PriceType.PER_UNIT,
+      unitName: 'метр',
+      minQuantity: 1,
+      isActive: true,
+      sortOrder: 4,
+    },
+    {
+      title: 'Установка шкафа',
+      description: 'Монтаж монтажного шкафа для оборудования',
+      basePrice: 3500,
+      priceType: PriceType.FIXED,
+      unitName: null,
+      minQuantity: 1,
+      isActive: true,
+      sortOrder: 5,
+    },
+    {
+      title: 'Установка видеорегистратора',
+      description: 'Установка и подключение видеорегистратора',
+      basePrice: 3000,
+      priceType: PriceType.FIXED,
+      unitName: null,
+      minQuantity: 1,
+      isActive: true,
+      sortOrder: 6,
+    },
+    {
+      title: 'Установка блока питания',
+      description: 'Монтаж и подключение блока питания для камер',
+      basePrice: 2000,
+      priceType: PriceType.FIXED,
+      unitName: null,
+      minQuantity: 1,
+      isActive: true,
+      sortOrder: 7,
+    },
+    {
+      title: 'Настройка удалённого доступа',
+      description: 'Настройка удалённого доступа к системе видеонаблюдения через интернет',
+      basePrice: 2500,
+      priceType: PriceType.FIXED,
+      unitName: null,
+      minQuantity: 1,
+      isActive: true,
+      sortOrder: 8,
+    },
+  ];
+
+  for (const serviceData of installationServices) {
+    await installationServiceRepo.save(installationServiceRepo.create(serviceData));
   }
 
   console.log('Seed completed');

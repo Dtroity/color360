@@ -24,6 +24,9 @@ export default function AdminPopularDevicesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [mode, setMode] = useState<'auto' | 'manual'>('manual'); // Режим работы: авто или ручной
+  const [savingMode, setSavingMode] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     productId: '',
@@ -37,7 +40,40 @@ export default function AdminPopularDevicesPage() {
   useEffect(() => {
     fetchDevices();
     fetchProducts();
+    fetchMode();
   }, []);
+
+  const fetchMode = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/settings/popular-products-mode`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mode) {
+          setMode(data.mode);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch mode:', err);
+    }
+  };
+
+  const saveMode = async (newMode: 'auto' | 'manual') => {
+    setSavingMode(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/settings/popular-products-mode`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: newMode }),
+      });
+      if (!res.ok) throw new Error('Не удалось сохранить режим');
+      setMode(newMode);
+      alert('Режим успешно сохранен');
+    } catch (err) {
+      alert('Ошибка сохранения режима: ' + (err instanceof Error ? err.message : 'Неизвестная ошибка'));
+    } finally {
+      setSavingMode(false);
+    }
+  };
 
   const fetchDevices = async () => {
     try {
@@ -171,14 +207,85 @@ export default function AdminPopularDevicesPage() {
     }
   };
 
+  // Drag & Drop handlers
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (dropIndex: number) => {
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const newDevices = [...devices];
+    const draggedDevice = newDevices[draggedIndex];
+    newDevices.splice(draggedIndex, 1);
+    newDevices.splice(dropIndex, 0, draggedDevice);
+
+    // Обновляем порядок сортировки
+    const reorderedDevices = newDevices.map((device, index) => ({
+      ...device,
+      sortOrder: index,
+    }));
+
+    setDevices(reorderedDevices);
+    setDraggedIndex(null);
+
+    // Сохраняем новый порядок на сервере
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/popular-devices/reorder`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: reorderedDevices.map((d) => ({ id: d.id, sortOrder: d.sortOrder })),
+        }),
+      });
+      if (!res.ok) {
+        throw new Error('Не удалось сохранить порядок');
+      }
+    } catch (err) {
+      alert('Ошибка сохранения порядка: ' + (err instanceof Error ? err.message : 'Неизвестная ошибка'));
+      await fetchDevices(); // Восстанавливаем исходный порядок
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Популярные устройства</h1>
-          <p className="text-gray-600 mt-1">Управление популярными устройствами</p>
+          <h1 className="text-2xl font-bold text-gray-900">Популярные товары</h1>
+          <p className="text-gray-600 mt-1">Управление популярными товарами на главной странице</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Режим:</span>
+            <select
+              value={mode}
+              onChange={(e) => saveMode(e.target.value as 'auto' | 'manual')}
+              disabled={savingMode}
+              className="px-3 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="manual">Вручную</option>
+              <option value="auto">Автоматически</option>
+            </select>
+            {savingMode && <span className="text-xs text-gray-500">Сохранение...</span>}
+          </label>
         </div>
       </div>
+
+      {mode === 'auto' && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded">
+          <p className="text-sm">
+            <strong>Автоматический режим:</strong> Товары выбираются автоматически по наличию и дате создания.
+            Для ручного управления переключите режим на "Вручную".
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -314,9 +421,24 @@ export default function AdminPopularDevicesPage() {
               </tr>
             </thead>
             <tbody>
-              {devices.map((device) => (
-                <tr key={device.id} className="border-t border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3">{device.id}</td>
+              {[...devices]
+                .filter((d) => mode === 'manual' || d.product !== null) // В ручном режиме показываем все, в авто - только с товарами
+                .sort((a, b) => a.sortOrder - b.sortOrder)
+                .map((device, index) => (
+                <tr
+                  key={device.id}
+                  draggable={mode === 'manual'}
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(index)}
+                  className={`border-t border-gray-100 hover:bg-gray-50 ${draggedIndex === index ? 'opacity-50' : ''} ${mode === 'manual' ? 'cursor-move' : ''}`}
+                >
+                  <td className="px-4 py-3">
+                    {mode === 'manual' && (
+                      <span className="mr-2 text-gray-400">⋮⋮</span>
+                    )}
+                    {device.id}
+                  </td>
                   <td className="px-4 py-3 font-medium">{device.name}</td>
                   <td className="px-4 py-3">
                     {device.product ? (

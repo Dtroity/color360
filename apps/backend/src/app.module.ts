@@ -19,6 +19,8 @@ import { PopularDevicesModule } from './modules/catalog/popular-devices/popular-
 import { OrdersModule } from './modules/orders/orders.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ServicesModule } from './modules/services/services.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -71,6 +73,8 @@ import { AuthModule } from './modules/auth/auth.module';
     OrdersModule,
     UsersModule,
     AuthModule,
+    ServicesModule,
+    AdminModule,
   ],
 
   controllers: [AppController],

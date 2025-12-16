@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -10,9 +11,12 @@ import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { Product } from '../catalog/products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -24,6 +28,7 @@ export class OrdersService {
     private readonly productRepository: Repository<Product>,
 
     private readonly dataSource: DataSource,
+    private readonly telegramService: TelegramService,
   ) {}
 
   /**
@@ -131,6 +136,15 @@ export class OrdersService {
       });
 
       if (!createdOrder) throw new Error('Failed to load created order');
+
+      // 11. Отправляем уведомление в Telegram (не блокируем основной flow при ошибке)
+      try {
+        await this.telegramService.sendNewOrderNotification(createdOrder);
+      } catch (error) {
+        this.logger.error('Failed to send Telegram notification:', error);
+        // Не выбрасываем ошибку, чтобы не прерывать создание заказа
+      }
+
       return createdOrder;
     } catch (error) {
       await queryRunner.rollbackTransaction();
