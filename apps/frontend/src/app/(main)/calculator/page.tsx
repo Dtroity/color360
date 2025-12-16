@@ -206,7 +206,7 @@ export default function CalculatorPage() {
                         )}
                       </span>
                       <span className="font-medium">
-                        {item.price.toLocaleString('ru-RU')} {item.currency}
+                        {item.price.toLocaleString('ru-RU')} ₽
                       </span>
                     </div>
                   ))}
